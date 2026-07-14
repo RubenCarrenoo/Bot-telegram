@@ -1,0 +1,756 @@
+{
+  "name": "TutorBot - Telegram + Google Sheets",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ]
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -200,
+        0
+      ],
+      "id": "telegram_trigger",
+      "name": "Telegram Trigger",
+      "webhookId": "REEMPLAZAR_AL_ACTIVAR",
+      "credentials": {
+        "telegramApi": {
+          "id": "PLACEHOLDER",
+          "name": "Telegram - TutorBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normaliza el payload que llega del Telegram Trigger\nconst msg = $input.first().json.message || {};\nconst chat_id = msg.chat ? msg.chat.id : null;\nconst telegram_user = msg.from ? msg.from.id : chat_id;\nconst text = (msg.text || '').trim();\n\nif (!chat_id) {\n  // Ignora updates que no sean mensajes de texto (ej. stickers, ediciones)\n  return [];\n}\n\nreturn [{\n  json: { chat_id, telegram_user, text }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        40,
+        0
+      ],
+      "id": "normalizar_input",
+      "name": "Normalizar Input"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "TU_SPREADSHEET_ID_AQUI",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "SESSIONS",
+          "mode": "name"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        280,
+        0
+      ],
+      "id": "leer_sessions",
+      "name": "Leer SESSIONS",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PLACEHOLDER",
+          "name": "Google Sheets - TutorBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "TU_SPREADSHEET_ID_AQUI",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "ESTUDIANTES",
+          "mode": "name"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        500,
+        0
+      ],
+      "id": "leer_estudiantes",
+      "name": "Leer ESTUDIANTES",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PLACEHOLDER",
+          "name": "Google Sheets - TutorBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "TU_SPREADSHEET_ID_AQUI",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "TUTORES",
+          "mode": "name"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        720,
+        0
+      ],
+      "id": "leer_tutores",
+      "name": "Leer TUTORES",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PLACEHOLDER",
+          "name": "Google Sheets - TutorBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "TU_SPREADSHEET_ID_AQUI",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "DISPONIBILIDAD",
+          "mode": "name"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        940,
+        0
+      ],
+      "id": "leer_disponibilidad",
+      "name": "Leer DISPONIBILIDAD",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PLACEHOLDER",
+          "name": "Google Sheets - TutorBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "TU_SPREADSHEET_ID_AQUI",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "TUTORIAS",
+          "mode": "name"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1160,
+        0
+      ],
+      "id": "leer_tutorias",
+      "name": "Leer TUTORIAS",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PLACEHOLDER",
+          "name": "Google Sheets - TutorBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "TU_SPREADSHEET_ID_AQUI",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Materias",
+          "mode": "name"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1380,
+        0
+      ],
+      "id": "leer_materias",
+      "name": "Leer Materias",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PLACEHOLDER",
+          "name": "Google Sheets - TutorBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================================\n// MOTOR DE ESTADO - Bot de Tutorías (Telegram + Google Sheets)\n// Lee: SESSIONS, ESTUDIANTES, TUTORES, DISPONIBILIDAD, TUTORIAS, Materias\n// Devuelve: mensaje a enviar + acción a ejecutar sobre Sheets + nuevo estado de sesión\n// ============================================================\n\nfunction get(nodeName) {\n  try { return $items(nodeName).map(i => i.json); } catch (e) { return []; }\n}\n\nconst input = $input.first().json; // { chat_id, telegram_user, text }\n\nconst sessions = get('Leer SESSIONS');\nconst estudiantes = get('Leer ESTUDIANTES');\nconst tutores = get('Leer TUTORES');\nconst disponibilidad = get('Leer DISPONIBILIDAD');\nconst tutorias = get('Leer TUTORIAS');\nconst materiasRow = get('Leer Materias')[0] || {};\nconst materiasList = Object.values(materiasRow).filter(v => v && String(v).trim() !== '');\n\nconst telegram_user = String(input.telegram_user);\nconst chat_id = input.chat_id;\nconst text = (input.text || '').trim();\n\nlet session = sessions.find(s => String(s.telegram_user) === telegram_user);\nlet pantalla = session ? session.pantalla_actual : 'inicio';\nlet paso = session ? (Number(session.paso_actual) || 0) : 0;\nlet datos = {};\ntry { datos = session && session.datos_parciales ? JSON.parse(session.datos_parciales) : {}; } catch (e) { datos = {}; }\n\nlet estudiante = estudiantes.find(e => String(e.telegram_user) === telegram_user);\n\nlet respuesta = '';\nlet accion = 'NONE';\nlet accion_datos = {};\nlet nueva_pantalla = pantalla;\nlet nuevo_paso = paso;\nlet nuevos_datos = datos;\n\nconst MENU_TEXT = \"👋 ¡Hola! ¿Qué deseas hacer?\\n1️⃣ Registrarme\\n2️⃣ Agendar tutoría\\n3️⃣ Consultar mis tutorías\\n4️⃣ Cancelar tutoría\\n\\nEscribe el número de la opción.\";\n\nfunction irAMenu(msgPrevio) {\n  nueva_pantalla = 'inicio';\n  nuevo_paso = 0;\n  nuevos_datos = {};\n  respuesta = (msgPrevio ? msgPrevio + \"\\n\\n\" : '') + MENU_TEXT;\n}\n\nif (/^\\/start$/i.test(text) || /^menu$/i.test(text)) {\n  irAMenu();\n} else {\n  switch (pantalla) {\n\n    case 'inicio': {\n      if (text === '1') {\n        if (estudiante) {\n          irAMenu('Ya estás registrado como ' + estudiante.nombre + '.');\n        } else {\n          nueva_pantalla = 'registro_nombre';\n          nuevo_paso = 1;\n          nuevos_datos = {};\n          respuesta = '✏️ ¿Cuál es tu nombre completo?';\n        }\n      } else if (text === '2') {\n        if (!estudiante) {\n          respuesta = '⚠️ Primero debes registrarte (opción 1) antes de agendar una tutoría.\\n\\n' + MENU_TEXT;\n        } else if (materiasList.length === 0) {\n          respuesta = '⚠️ No hay materias configuradas actualmente. Intenta más tarde.\\n\\n' + MENU_TEXT;\n        } else {\n          const lista = materiasList.map((m, i) => (i + 1) + '️⃣ ' + m).join('\\n');\n          nueva_pantalla = 'agendar_materia';\n          nuevo_paso = 1;\n          nuevos_datos = {};\n          respuesta = '📚 ¿Qué materia necesitas?\\n' + lista;\n        }\n      } else if (text === '3') {\n        if (!estudiante) {\n          respuesta = '⚠️ Primero debes registrarte (opción 1).\\n\\n' + MENU_TEXT;\n        } else {\n          const propias = tutorias.filter(t => t.id_estudiante === estudiante.id_estudiante && t.estado !== 'Cancelada');\n          if (propias.length === 0) {\n            respuesta = '📭 No tienes tutorías agendadas.\\n\\n' + MENU_TEXT;\n          } else {\n            const lista = propias.map(t => `• ${t.materia} - ${t.fecha} ${t.hora} (${t.estado})`).join('\\n');\n            respuesta = '📋 Tus tutorías:\\n' + lista + '\\n\\n' + MENU_TEXT;\n          }\n          nueva_pantalla = 'inicio'; nuevo_paso = 0; nuevos_datos = {};\n        }\n      } else if (text === '4') {\n        if (!estudiante) {\n          respuesta = '⚠️ Primero debes registrarte (opción 1).\\n\\n' + MENU_TEXT;\n        } else {\n          const cancelables = tutorias.filter(t => t.id_estudiante === estudiante.id_estudiante && t.estado === 'Confirmada');\n          if (cancelables.length === 0) {\n            respuesta = '📭 No tienes tutorías activas para cancelar.\\n\\n' + MENU_TEXT;\n            nueva_pantalla = 'inicio'; nuevo_paso = 0; nuevos_datos = {};\n          } else {\n            const lista = cancelables.map((t, i) => `${i + 1}️⃣ ${t.materia} - ${t.fecha} ${t.hora}`).join('\\n');\n            nueva_pantalla = 'cancelar_seleccionar';\n            nuevo_paso = 1;\n            nuevos_datos = { candidatas: cancelables.map(t => t.id_tutoria) };\n            respuesta = '❌ ¿Cuál tutoría deseas cancelar?\\n' + lista;\n          }\n        }\n      } else {\n        irAMenu('No entendí esa opción.');\n      }\n      break;\n    }\n\n    case 'registro_nombre': {\n      if (!text) { respuesta = '✏️ Por favor escribe tu nombre completo.'; break; }\n      nuevos_datos = { nombre: text };\n      nueva_pantalla = 'registro_materias';\n      nuevo_paso = 2;\n      respuesta = '📚 ¿Qué materias te interesan? (sepáralas por comas)\\nEj: ' + materiasList.slice(0, 2).join(', ');\n      break;\n    }\n\n    case 'registro_materias': {\n      if (!text) { respuesta = '📚 Por favor escribe al menos una materia.'; break; }\n      const elegidas = text.split(',').map(m => m.trim()).filter(Boolean);\n      const validas = elegidas.filter(m => materiasList.some(ml => ml.toLowerCase() === m.toLowerCase()));\n      if (validas.length === 0) {\n        respuesta = '⚠️ No reconocí esas materias. Materias disponibles: ' + materiasList.join(', ');\n        break;\n      }\n      const id_estudiante = 'EST' + Date.now();\n      accion = 'REGISTRAR_ESTUDIANTE';\n      accion_datos = {\n        id_estudiante,\n        telegram_user,\n        nombre: datos.nombre,\n        materias_interes: validas.join(',')\n      };\n      irAMenu('✅ ¡Listo, ' + datos.nombre + '! Quedaste registrado.');\n      break;\n    }\n\n    case 'agendar_materia': {\n      const idx = parseInt(text, 10) - 1;\n      if (isNaN(idx) || idx < 0 || idx >= materiasList.length) {\n        respuesta = '⚠️ Elige un número válido de la lista.';\n        break;\n      }\n      const materia = materiasList[idx];\n      const tutoresAptos = tutores.filter(t => t.estado === 'Activo' &&\n        String(t.especialidad_materias || '').split(',').map(s => s.trim().toLowerCase()).includes(materia.toLowerCase()));\n      const idsAptos = tutoresAptos.map(t => t.id_tutor);\n      const opcionesDisp = disponibilidad.filter(d => d.estado === 'Libre' && idsAptos.includes(d.id_tutor));\n      if (opcionesDisp.length === 0) {\n        irAMenu('😕 No hay tutores disponibles para ' + materia + ' en este momento.');\n        break;\n      }\n      const opciones = opcionesDisp.map(d => {\n        const tut = tutoresAptos.find(t => t.id_tutor === d.id_tutor);\n        return { id_dispo: d.id_dispo, id_tutor: d.id_tutor, nombre_tutor: tut ? tut.nombre : d.id_tutor, dia_semana: d.dia_semana, hora_inicio: d.hora_inicio, hora_fin: d.hora_fin };\n      });\n      const lista = opciones.map((o, i) => `${i + 1}️⃣ ${o.nombre_tutor} - ${o.dia_semana} ${o.hora_inicio}-${o.hora_fin}`).join('\\n');\n      nueva_pantalla = 'agendar_confirmar';\n      nuevo_paso = 2;\n      nuevos_datos = { materia, opciones: JSON.stringify(opciones) };\n      respuesta = '🗓️ Horarios disponibles para ' + materia + ':\\n' + lista + '\\n\\nElige un número.';\n      break;\n    }\n\n    case 'agendar_confirmar': {\n      let opciones = [];\n      try { opciones = JSON.parse(datos.opciones || '[]'); } catch (e) { opciones = []; }\n      const idx = parseInt(text, 10) - 1;\n      if (isNaN(idx) || idx < 0 || idx >= opciones.length) {\n        respuesta = '⚠️ Elige un número válido de la lista.';\n        break;\n      }\n      const elegido = opciones[idx];\n      const id_tutoria = 'TUTORIA' + Date.now();\n      accion = 'CREAR_TUTORIA';\n      accion_datos = {\n        tutoria: {\n          id_tutoria,\n          id_estudiante: estudiante.id_estudiante,\n          id_tutor: elegido.id_tutor,\n          materia: datos.materia,\n          fecha: elegido.dia_semana,\n          hora: elegido.hora_inicio + '-' + elegido.hora_fin,\n          estado: 'Confirmada',\n          timestamp_creacion: new Date().toISOString()\n        },\n        id_dispo: elegido.id_dispo,\n        id_tutoria_asociada: id_tutoria\n      };\n      irAMenu('✅ Tutoría de ' + datos.materia + ' agendada con ' + elegido.nombre_tutor + ' (' + elegido.dia_semana + ' ' + elegido.hora_inicio + '-' + elegido.hora_fin + ').');\n      break;\n    }\n\n    case 'cancelar_seleccionar': {\n      const candidatas = datos.candidatas || [];\n      const idx = parseInt(text, 10) - 1;\n      if (isNaN(idx) || idx < 0 || idx >= candidatas.length) {\n        respuesta = '⚠️ Elige un número válido.';\n        break;\n      }\n      const id_tutoria = candidatas[idx];\n      const tutoriaObj = tutorias.find(t => t.id_tutoria === id_tutoria);\n      accion = 'CANCELAR_TUTORIA';\n      accion_datos = {\n        id_tutoria,\n        id_tutor: tutoriaObj ? tutoriaObj.id_tutor : null\n      };\n      irAMenu('✅ Tutoría cancelada correctamente.');\n      break;\n    }\n\n    default: {\n      irAMenu('Reiniciemos.');\n    }\n  }\n}\n\nif (!respuesta) { respuesta = MENU_TEXT; }\n\nreturn [{\n  json: {\n    chat_id,\n    telegram_user,\n    mensaje_respuesta: respuesta,\n    accion,\n    accion_datos,\n    session_update: {\n      telegram_user,\n      pantalla_actual: nueva_pantalla,\n      paso_actual: nuevo_paso,\n      datos_parciales: JSON.stringify(nuevos_datos)\n    }\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        0
+      ],
+      "id": "motor_de_estado",
+      "name": "Motor de Estado"
+    },
+    {
+      "parameters": {
+        "mode": "expression",
+        "output": "input",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.accion}}",
+                    "rightValue": "REGISTRAR_ESTUDIANTE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "outputKey": "REGISTRAR_ESTUDIANTE"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.accion}}",
+                    "rightValue": "CREAR_TUTORIA",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "outputKey": "CREAR_TUTORIA"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.accion}}",
+                    "rightValue": "CANCELAR_TUTORIA",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "outputKey": "CANCELAR_TUTORIA"
+            }
+          ]
+        },
+        "fallbackOutput": "extra",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1860,
+        0
+      ],
+      "id": "enrutar_accion",
+      "name": "Enrutar Accion"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "TU_SPREADSHEET_ID_AQUI",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "ESTUDIANTES",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id_estudiante": "={{$json.accion_datos.id_estudiante}}",
+            "telegram_user": "={{$json.accion_datos.telegram_user}}",
+            "nombre": "={{$json.accion_datos.nombre}}",
+            "materias_interes": "={{$json.accion_datos.materias_interes}}"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2120,
+        -220
+      ],
+      "id": "guardar_estudiante",
+      "name": "Guardar Estudiante",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PLACEHOLDER",
+          "name": "Google Sheets - TutorBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "TU_SPREADSHEET_ID_AQUI",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "TUTORIAS",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id_tutoria": "={{$json.accion_datos.tutoria.id_tutoria}}",
+            "id_estudiante": "={{$json.accion_datos.tutoria.id_estudiante}}",
+            "id_tutor": "={{$json.accion_datos.tutoria.id_tutor}}",
+            "materia": "={{$json.accion_datos.tutoria.materia}}",
+            "fecha": "={{$json.accion_datos.tutoria.fecha}}",
+            "hora": "={{$json.accion_datos.tutoria.hora}}",
+            "estado": "={{$json.accion_datos.tutoria.estado}}",
+            "timestamp_creacion": "={{$json.accion_datos.tutoria.timestamp_creacion}}"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2120,
+        0
+      ],
+      "id": "guardar_tutoria",
+      "name": "Guardar Tutoria",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PLACEHOLDER",
+          "name": "Google Sheets - TutorBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "TU_SPREADSHEET_ID_AQUI",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "DISPONIBILIDAD",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id_dispo"
+          ],
+          "value": {
+            "id_dispo": "={{$('Motor de Estado').item.json.accion_datos.id_dispo}}",
+            "estado": "Ocupada",
+            "id_tutoria_asociada": "={{$('Motor de Estado').item.json.accion_datos.id_tutoria_asociada}}"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2340,
+        0
+      ],
+      "id": "marcar_disponibilidad_ocupada",
+      "name": "Marcar Disponibilidad Ocupada",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PLACEHOLDER",
+          "name": "Google Sheets - TutorBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "TU_SPREADSHEET_ID_AQUI",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "TUTORIAS",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id_tutoria"
+          ],
+          "value": {
+            "id_tutoria": "={{$json.accion_datos.id_tutoria}}",
+            "estado": "Cancelada"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2120,
+        260
+      ],
+      "id": "cancelar_tutoria",
+      "name": "Cancelar Tutoria",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PLACEHOLDER",
+          "name": "Google Sheets - TutorBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "TU_SPREADSHEET_ID_AQUI",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "DISPONIBILIDAD",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id_tutoria_asociada"
+          ],
+          "value": {
+            "id_tutoria_asociada": "={{$('Motor de Estado').item.json.accion_datos.id_tutoria}}",
+            "estado": "Libre"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2340,
+        260
+      ],
+      "id": "liberar_disponibilidad",
+      "name": "Liberar Disponibilidad",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PLACEHOLDER",
+          "name": "Google Sheets - TutorBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "TU_SPREADSHEET_ID_AQUI",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "SESSIONS",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "telegram_user"
+          ],
+          "value": {
+            "telegram_user": "={{$('Motor de Estado').item.json.session_update.telegram_user}}",
+            "pantalla_actual": "={{$('Motor de Estado').item.json.session_update.pantalla_actual}}",
+            "paso_actual": "={{$('Motor de Estado').item.json.session_update.paso_actual}}",
+            "datos_parciales": "={{$('Motor de Estado').item.json.session_update.datos_parciales}}"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2600,
+        0
+      ],
+      "id": "actualizar_session",
+      "name": "Actualizar Session",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PLACEHOLDER",
+          "name": "Google Sheets - TutorBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{$('Motor de Estado').item.json.chat_id}}",
+        "text": "={{$('Motor de Estado').item.json.mensaje_respuesta}}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2820,
+        0
+      ],
+      "id": "enviar_respuesta_telegram",
+      "name": "Enviar Respuesta Telegram",
+      "credentials": {
+        "telegramApi": {
+          "id": "PLACEHOLDER",
+          "name": "Telegram - TutorBot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Input": {
+      "main": [
+        [
+          {
+            "node": "Leer SESSIONS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer SESSIONS": {
+      "main": [
+        [
+          {
+            "node": "Leer ESTUDIANTES",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer ESTUDIANTES": {
+      "main": [
+        [
+          {
+            "node": "Leer TUTORES",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer TUTORES": {
+      "main": [
+        [
+          {
+            "node": "Leer DISPONIBILIDAD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer DISPONIBILIDAD": {
+      "main": [
+        [
+          {
+            "node": "Leer TUTORIAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer TUTORIAS": {
+      "main": [
+        [
+          {
+            "node": "Leer Materias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Materias": {
+      "main": [
+        [
+          {
+            "node": "Motor de Estado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Motor de Estado": {
+      "main": [
+        [
+          {
+            "node": "Enrutar Accion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrutar Accion": {
+      "main": [
+        [
+          {
+            "node": "Guardar Estudiante",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Guardar Tutoria",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cancelar Tutoria",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Actualizar Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar Tutoria": {
+      "main": [
+        [
+          {
+            "node": "Marcar Disponibilidad Ocupada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cancelar Tutoria": {
+      "main": [
+        [
+          {
+            "node": "Liberar Disponibilidad",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar Estudiante": {
+      "main": [
+        [
+          {
+            "node": "Actualizar Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar Disponibilidad Ocupada": {
+      "main": [
+        [
+          {
+            "node": "Actualizar Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Liberar Disponibilidad": {
+      "main": [
+        [
+          {
+            "node": "Actualizar Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar Session": {
+      "main": [
+        [
+          {
+            "node": "Enviar Respuesta Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
