@@ -1,0 +1,1538 @@
+{
+  "name": "TutorBot - Bot PROFESORES",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1504,
+        352
+      ],
+      "id": "e5ce1018-376c-47bc-b8f9-63fa504034fe",
+      "webhookId": "2691528f-0cf4-4ae9-a6de-35aec14f675f",
+      "credentials": {
+        "telegramApi": {
+          "id": "BylZ6u7b5AcZtxs1",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "telegram_user",
+              "value": "={{ $json.message.chat.id }}",
+              "type": "string"
+            },
+            {
+              "name": "texto",
+              "value": "={{ $json.message.text || '' }}",
+              "type": "string"
+            },
+            {
+              "name": "nombre_usuario",
+              "value": "={{ $json.message.from.first_name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Extraer Datos Mensaje",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1296,
+        352
+      ],
+      "id": "eb8ba0b7-4bf8-42fe-8d01-987f6c6d10c7"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1WlGfDmzLSOdozHx5LOYbSBt7Ga6KhLPPYecvMbhDYfU",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1634970800,
+          "mode": "list",
+          "cachedResultName": "TUTORES",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WlGfDmzLSOdozHx5LOYbSBt7Ga6KhLPPYecvMbhDYfU/edit#gid=1634970800"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "id_tutor"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Buscar en Hoja Tutores",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -1104,
+        352
+      ],
+      "id": "fa95ac70-a2b9-4009-a818-851a2aed921a",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ux9pPkavCycZHU2s",
+          "name": "Google Sheets account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1WlGfDmzLSOdozHx5LOYbSBt7Ga6KhLPPYecvMbhDYfU",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 961918798,
+          "mode": "list",
+          "cachedResultName": "SESSIONS"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "telegram_user",
+              "lookupValue": "={{ $('Extraer Datos Mensaje').item.json.telegram_user }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Buscar Sesion",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -896,
+        352
+      ],
+      "id": "166446b5-ec4f-4b6d-8356-56375ce07dcb",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ux9pPkavCycZHU2s",
+          "name": "Google Sheets account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const message = $('Extraer Datos Mensaje').item.json;\nconst tutor = $('Buscar en Hoja Tutores').item.json;\nconst session = $json;\n\nconst telegram_user = message.telegram_user;\nconst texto = (message.texto || '').trim().toLowerCase();\n\nif (!tutor || !tutor.id_tutor) {\n  return [{ json: { registrado: false, telegram_user, error_msg: \"🔴 No estás registrado como tutor en el sistema. Por favor, contacta al administrador.\" } }];\n}\n\nlet pantalla_actual = 'menu_principal';\nlet datos_parciales = '{}';\nconst es_start = (texto === '/start');\n\nif (!es_start && session && session.pantalla_actual) {\n  pantalla_actual = session.pantalla_actual;\n  datos_parciales = session.datos_parciales || '{}';\n}\n\nreturn [{\n  json: {\n    registrado: true,\n    telegram_user,\n    id_tutor: tutor.id_tutor,\n    nombre_tutor: tutor.nombre,\n    pantalla_actual,\n    datos_parciales\n  }\n}];"
+      },
+      "name": "Gestionar Sesion y Registro",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -704,
+        352
+      ],
+      "id": "25c12135-d586-45e0-b25c-8e82e5ce913c"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.registrado }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          }
+        },
+        "options": {}
+      },
+      "name": "¿Tutor Registrado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -496,
+        352
+      ],
+      "id": "56072efb-00e9-4f6c-bd61-4eb697aecf18"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.telegram_user }}",
+        "text": "={{ $json.error_msg }}",
+        "additionalFields": {}
+      },
+      "name": "Mensaje No Registrado",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -496,
+        160
+      ],
+      "id": "077f0232-de4a-4a0a-b58f-3f768297f644",
+      "webhookId": "51b7a6be-4627-4587-bf49-57766e61244f",
+      "credentials": {
+        "telegramApi": {
+          "id": "BylZ6u7b5AcZtxs1",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.pantalla_actual }}",
+                    "rightValue": "menu_principal",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.pantalla_actual }}",
+                    "rightValue": "esperando_opcion_menu",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.pantalla_actual }}",
+                    "rightValue": "esperando_confirmacion",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.pantalla_actual }}",
+                    "rightValue": "esperando_finalizacion",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "name": "Router Pantalla",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -304,
+        352
+      ],
+      "id": "882c06d7-e897-4254-bae0-74a7c471a9f7"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extraer Datos Mensaje').item.json.telegram_user }}",
+        "text": "=¡Hola {{ $('Buscar en Hoja Tutores').item.json.nombre || 'Tutor' }}! Bienvenido a tu menú de gestión.\nPor favor, responde con el número de la opción que necesitas:\n\n1. Confirmar tutoría pendiente (Asignada)\n2. Finalizar tutoría activa (Confirmada)\n3. Consultar mis tutorías",
+        "additionalFields": {}
+      },
+      "name": "Mostrar Menu Tutor",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f79fea2d-8a6e-4570-9c72-f74149467cc6",
+      "webhookId": "3f26bc9b-f1c7-4a93-9de5-17df74da90f7",
+      "credentials": {
+        "telegramApi": {
+          "id": "BylZ6u7b5AcZtxs1",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1WlGfDmzLSOdozHx5LOYbSBt7Ga6KhLPPYecvMbhDYfU",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 961918798,
+          "mode": "list",
+          "cachedResultName": "SESSIONS"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "telegram_user": "={{ $('Extraer Datos Mensaje').item.json.telegram_user }}",
+            "pantalla_actual": "esperando_opcion_menu",
+            "paso_actual": "0",
+            "datos_parciales": "{}"
+          },
+          "matchingColumns": [
+            "telegram_user"
+          ],
+          "schema": [
+            {
+              "id": "telegram_user",
+              "displayName": "telegram_user",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pantalla_actual",
+              "displayName": "pantalla_actual",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "paso_actual",
+              "displayName": "paso_actual",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "datos_parciales",
+              "displayName": "datos_parciales",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "name": "Guardar Sesion: esperando_opcion_menu",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        208,
+        0
+      ],
+      "id": "db3233bc-d34e-47b1-aa72-7d048c52d414",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ux9pPkavCycZHU2s",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const { texto, telegram_user } = $('Extraer Datos Mensaje').item.json;\nconst opciones = { '1': 'confirmar', '2': 'finalizar', '3': 'consultar' };\nconst opcion = opciones[texto.trim()] || null;\nconst valida = (opcion !== null);\nreturn [{ json: { opcion, valida, telegram_user } }];"
+      },
+      "name": "Interpretar Opcion Menu",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        176
+      ],
+      "id": "fe828b71-ea2c-4801-8e15-b4f5eaadd6ca"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.valida }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          }
+        },
+        "options": {}
+      },
+      "name": "¿Opción Válida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        208,
+        176
+      ],
+      "id": "68887c02-70a8-4fbc-ba2c-7c13a60fb19e"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.telegram_user }}",
+        "text": "Por favor, selecciona una opción válida. Responde solo 1, 2 o 3.",
+        "additionalFields": {}
+      },
+      "name": "Opcion Invalida - Reintentar",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        208,
+        304
+      ],
+      "id": "c90128bf-7448-4058-8db5-677c98ee65f8",
+      "webhookId": "f1789a1c-1622-4538-9f3e-06110f85868e",
+      "credentials": {
+        "telegramApi": {
+          "id": "BylZ6u7b5AcZtxs1",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1WlGfDmzLSOdozHx5LOYbSBt7Ga6KhLPPYecvMbhDYfU",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 27329530,
+          "mode": "list",
+          "cachedResultName": "TUTORIAS"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "id_tutor",
+              "lookupValue": "={{ $('Buscar en Hoja Tutores').item.json.id_tutor }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Leer Tutorias",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        400,
+        112
+      ],
+      "id": "d8a6433e-7227-4e0a-a75f-940d5ac209cd",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ux9pPkavCycZHU2s",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const { opcion, telegram_user } = $('Interpretar Opcion Menu').item.json;\nconst tutorias = $input.all().map(i => i.json).filter(t => t.id_tutoria);\n\nlet texto = '';\nlet hay = false;\nlet nueva_pantalla = 'menu_principal';\nlet lista_guardar = '[]';\n\nif (opcion === 'confirmar') {\n  const items = tutorias.filter(t => ['Asignada', 'Pendiente'].includes(t.estado));\n  hay = items.length > 0;\n  texto = hay\n    ? 'Elige la tutoría que deseas CONFIRMAR (responde con el número):\\n' +\n      items.map((t, i) => `${i + 1}. Estudiante: ${t.nombre_estudiante || 'Registrado'} | ${t.materia} | ${t.fecha} a las ${t.hora}`).join('\\n')\n    : 'No tienes tutorías pendientes de confirmación.';\n  nueva_pantalla = hay ? 'esperando_confirmacion' : 'menu_principal';\n  lista_guardar = JSON.stringify(items);\n} else if (opcion === 'finalizar') {\n  const items = tutorias.filter(t => t.estado === 'Confirmada');\n  hay = items.length > 0;\n  texto = hay\n    ? 'Elige la tutoría que deseas FINALIZAR (responde con el número):\\n' +\n      items.map((t, i) => `${i + 1}. Estudiante: ${t.nombre_estudiante || 'Registrado'} | ${t.materia} | ${t.fecha}`).join('\\n')\n    : 'No tienes tutorías activas (Confirmadas) para finalizar.';\n  nueva_pantalla = hay ? 'esperando_finalizacion' : 'menu_principal';\n  lista_guardar = JSON.stringify(items);\n} else if (opcion === 'consultar') {\n  texto = tutorias.length\n    ? 'Tus tutorías registradas:\\n' + tutorias.map(t => `- [${t.estado}] ${t.materia} | ${t.fecha} ${t.hora}`).join('\\n')\n    : 'No tienes tutorías en tu historial todavía.';\n  nueva_pantalla = 'menu_principal';\n  hay = false;\n}\n\nreturn [{ json: { texto, hay, nueva_pantalla, lista_guardar, telegram_user } }];"
+      },
+      "name": "Procesar Opcion Menu",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        608,
+        112
+      ],
+      "id": "c31933ec-87d3-4d25-ad14-840c65c0bf59"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.telegram_user }}",
+        "text": "={{ $json.texto }}",
+        "additionalFields": {}
+      },
+      "name": "Enviar Mensaje Opcion",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        800,
+        112
+      ],
+      "id": "dfe66e55-8a47-471f-92ee-2a711fa09ae7",
+      "webhookId": "08d00417-169d-450f-b030-a6331014cbdf",
+      "credentials": {
+        "telegramApi": {
+          "id": "BylZ6u7b5AcZtxs1",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $('Procesar Opcion Menu').item.json.hay }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              },
+              "id": "e3769a6b-6ca8-4448-82a8-0fd80173c7af"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Hay Items Opcion?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        112
+      ],
+      "id": "229fda1e-35aa-498d-8f59-a546e30b2fcf"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1WlGfDmzLSOdozHx5LOYbSBt7Ga6KhLPPYecvMbhDYfU",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 961918798,
+          "mode": "list",
+          "cachedResultName": "SESSIONS"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "telegram_user": "={{ $('Procesar Opcion Menu').item.json.telegram_user }}",
+            "datos_parciales": "={{ JSON.stringify({lista: $('Procesar Opcion Menu').item.json.lista_guardar}) }}",
+            "pantalla_actual": "={{ $('Procesar Opcion Menu').item.json.nueva_pantalla }}",
+            "paso_actual": "1"
+          },
+          "matchingColumns": [
+            "telegram_user"
+          ],
+          "schema": [
+            {
+              "id": "telegram_user",
+              "displayName": "telegram_user",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pantalla_actual",
+              "displayName": "pantalla_actual",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "paso_actual",
+              "displayName": "paso_actual",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "datos_parciales",
+              "displayName": "datos_parciales",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "name": "Guardar Sesion Opcion",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1200,
+        64
+      ],
+      "id": "fb213c0f-8786-420d-9954-19d977628ccc",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ux9pPkavCycZHU2s",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const { texto, telegram_user } = $('Extraer Datos Mensaje').item.json;\nconst { pantalla_actual, datos_parciales } = $json;\nconst seleccion = parseInt(texto.trim(), 10);\nconst datosSesion = datos_parciales ? JSON.parse(datos_parciales) : {};\nconst lista = datosSesion.lista ? JSON.parse(datosSesion.lista) : [];\nconst valido = !isNaN(seleccion) && seleccion > 0 && seleccion <= lista.length;\n\nif (!valido) {\n  const error_msg = pantalla_actual === 'esperando_confirmacion'\n    ? 'Opción inválida. Responde con un número válido de la lista de tutorías pendientes.'\n    : 'Opción inválida. Responde con un número de la lista de tutorías activas.';\n  return [{ json: { valido, telegram_user, error_msg } }];\n}\n\nconst tutoria = lista[seleccion - 1];\nconst { id_tutoria, id_disponibilidad, id_estudiante, materia, fecha, hora } = tutoria;\n\nlet nuevo_estado_tutoria = '';\nlet nuevo_estado_disp = '';\nlet msg_estudiante = '';\nlet msg_tutor = '';\n\nif (pantalla_actual === 'esperando_confirmacion') {\n  nuevo_estado_tutoria = 'Confirmada';\n  nuevo_estado_disp = 'Ocupado';\n  msg_estudiante = `✨ ¡Tu tutoría ha sido confirmada!\\n\\nMateria: ${materia}\\nFecha: ${fecha}\\nHora: ${hora}\\n\\nTu tutor te espera. ¡Prepárate bien!`;\n  msg_tutor = `✅ Tutoría confirmada con éxito. Hemos notificado al estudiante por ti.`;\n} else if (pantalla_actual === 'esperando_finalizacion') {\n  nuevo_estado_tutoria = 'Finalizada';\n  nuevo_estado_disp = 'Libre';\n  msg_estudiante = `🔔 Tu tutoría de ${materia} ha sido completada y finalizada por tu tutor. ¡Gracias por tu dedicación!`;\n  msg_tutor = `🎉 Tutoría finalizada con éxito. El bloque horario vuelve a estar Libre para agendar.`;\n}\n\nreturn [{\n  json: {\n    valido,\n    id_tutoria,\n    id_disponibilidad,\n    id_estudiante,\n    materia,\n    fecha,\n    hora,\n    telegram_user,\n    pantalla_actual,\n    nuevo_estado_tutoria,\n    nuevo_estado_disp,\n    msg_estudiante,\n    msg_tutor\n  }\n}];"
+      },
+      "name": "Validar Seleccion Accion",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        752
+      ],
+      "id": "9ee2dd9c-da57-49e9-9b5c-81ed4edd655e"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          }
+        },
+        "options": {}
+      },
+      "name": "Seleccion Valida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        208,
+        752
+      ],
+      "id": "c8a78f7b-f2be-4be5-897e-f8643117f5ed"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.telegram_user }}",
+        "text": "={{ $json.error_msg }}",
+        "additionalFields": {}
+      },
+      "name": "Enviar Mensaje Invalido",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        400,
+        912
+      ],
+      "id": "9530d488-4fee-4780-9907-2090701e1b7d",
+      "webhookId": "6018e06e-c1b2-403c-a1f2-0d21edb57189",
+      "credentials": {
+        "telegramApi": {
+          "id": "BylZ6u7b5AcZtxs1",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1WlGfDmzLSOdozHx5LOYbSBt7Ga6KhLPPYecvMbhDYfU",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 27329530,
+          "mode": "list",
+          "cachedResultName": "TUTORIAS"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id_tutoria": "={{ $('Validar Seleccion Accion').item.json.id_tutoria }}",
+            "estado": "={{ $('Validar Seleccion Accion').item.json.nuevo_estado_tutoria }}"
+          },
+          "matchingColumns": [
+            "id_tutoria"
+          ],
+          "schema": [
+            {
+              "id": "id_tutoria",
+              "displayName": "id_tutoria",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "id_estudiante",
+              "displayName": "id_estudiante",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "id_tutor",
+              "displayName": "id_tutor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "materia",
+              "displayName": "materia",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "fecha",
+              "displayName": "fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "hora",
+              "displayName": "hora",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "timestamp_creacion",
+              "displayName": "timestamp_creacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "id_dispo",
+              "displayName": "id_dispo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "name": "Actualizar Estado Tutoria",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        400,
+        752
+      ],
+      "id": "63370e38-22e8-4f0d-ba6a-772ee9e3b94e",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ux9pPkavCycZHU2s",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1WlGfDmzLSOdozHx5LOYbSBt7Ga6KhLPPYecvMbhDYfU",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "DISPONIBILIDAD",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [
+            "id_disponibilidad"
+          ],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "name": "Actualizar Estado Disponibilidad",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        608,
+        752
+      ],
+      "id": "31cbe2d8-8dba-4d30-8fc1-3772798ea86d",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ux9pPkavCycZHU2s",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1WlGfDmzLSOdozHx5LOYbSBt7Ga6KhLPPYecvMbhDYfU",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 703666908,
+          "mode": "list",
+          "cachedResultName": "ESTUDIANTES",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WlGfDmzLSOdozHx5LOYbSBt7Ga6KhLPPYecvMbhDYfU/edit#gid=703666908"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "id_estudiante",
+              "lookupValue": "={{ $('Validar Seleccion Accion').item.json.id_estudiante }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Buscar Telegram Estudiante",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        800,
+        752
+      ],
+      "id": "f302c030-bf80-4da4-bc45-dd58cf67aceb",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ux9pPkavCycZHU2s",
+          "name": "Google Sheets account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Validar Seleccion Accion').item.json.id_estudiante }}",
+        "text": "={{ $('Validar Seleccion Accion').item.json.msg_estudiante }}",
+        "additionalFields": {}
+      },
+      "name": "Notificar Estudiante",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1008,
+        752
+      ],
+      "id": "a2495112-1c57-4577-a568-5d682f0803df",
+      "webhookId": "0c615eb6-043d-4be3-8447-f73388b20827",
+      "credentials": {
+        "telegramApi": {
+          "id": "BylZ6u7b5AcZtxs1",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Validar Seleccion Accion').item.json.telegram_user }}",
+        "text": "={{ $('Validar Seleccion Accion').item.json.msg_tutor }}",
+        "additionalFields": {}
+      },
+      "name": "Notificar Tutor",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1200,
+        752
+      ],
+      "id": "94bd6d52-fcd5-408c-8bcd-3cf7630ca33e",
+      "webhookId": "a91e7bf8-ad57-4db7-877b-91a344f9b66d",
+      "credentials": {
+        "telegramApi": {
+          "id": "BylZ6u7b5AcZtxs1",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "name": "Errores Sheets",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1504,
+        752
+      ],
+      "id": "fb7cb6dd-3e1d-47e8-a0c1-cc31bb263f96"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $vars.ADMIN_TELEGRAM_CHAT_ID || 'PON_AQUI_TU_CHAT_ID_DE_ADMIN' }}",
+        "text": "=⚠️ Error en el workflow \"{{ $json.workflow?.name }}\"\nNodo: {{ $json.execution?.lastNodeExecuted }}\nMensaje: {{ $json.execution?.error?.message || $json.trigger?.error?.message || 'Sin detalle' }}\nEjecución: {{ $json.execution?.url }}\n\nPor favor revisa la ejecución fallida. Los usuarios podrían no recibir respuesta hasta resolverlo.",
+        "additionalFields": {}
+      },
+      "name": "Notificar Error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1296,
+        752
+      ],
+      "id": "04308aa5-c1d1-4576-9493-ae9d4a9cda7a",
+      "webhookId": "94eaaedf-c11c-47aa-8828-7a538e8ff07c",
+      "credentials": {
+        "telegramApi": {
+          "id": "BylZ6u7b5AcZtxs1",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extraer Datos Mensaje').item.json.telegram_user }}",
+        "text": "⚠️ Tu sesión se corrompió o expiró. La reiniciamos: escribe /start para volver a empezar.",
+        "additionalFields": {}
+      },
+      "name": "Mensaje Sesion Corrupta",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        800
+      ],
+      "id": "a49727f0-8579-49e6-b05c-b6c0e1828010",
+      "webhookId": "9205813d-c726-4a24-a746-f11bf26fbf1a",
+      "credentials": {
+        "telegramApi": {
+          "id": "BylZ6u7b5AcZtxs1",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1WlGfDmzLSOdozHx5LOYbSBt7Ga6KhLPPYecvMbhDYfU",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 961918798,
+          "mode": "list",
+          "cachedResultName": "SESSIONS"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "telegram_user": "={{ $('Extraer Datos Mensaje').item.json.telegram_user }}",
+            "pantalla_actual": "menu_principal",
+            "paso_actual": "0",
+            "datos_parciales": "{}"
+          },
+          "matchingColumns": [
+            "telegram_user"
+          ],
+          "schema": [
+            {
+              "id": "telegram_user",
+              "displayName": "telegram_user",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pantalla_actual",
+              "displayName": "pantalla_actual",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "paso_actual",
+              "displayName": "paso_actual",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "datos_parciales",
+              "displayName": "datos_parciales",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "name": "Reset Sesion (corrupta)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        208,
+        800
+      ],
+      "id": "89ed2a0d-433e-49d6-aca9-6134f1690c81",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ux9pPkavCycZHU2s",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## ⚠️ Requiere columna en hoja TUTORIAS\n`id_disponibilidad` debe existir en TUTORIAS (además de id_tutoria, id_estudiante, id_tutor, materia, fecha, hora, estado). Sin esta columna, 'Actualizar Disponibilidad' no podrá machear la fila correcta en DISPONIBILIDAD.",
+        "height": 260,
+        "width": 380,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        208,
+        1104
+      ],
+      "id": "af60c74a-f76c-4690-b0db-f0d59a67791d",
+      "name": "Nota - sticky-schema-tutorias"
+    },
+    {
+      "parameters": {
+        "content": "## ⚠️ Requiere columna en hoja TUTORES\n`telegram_id` debe existir en TUTORES (además de id_tutor, nombre, especialidad_materias, estado). Sin esta columna, 'Buscar en Hoja Tutores' nunca reconocerá a ningún profesor.",
+        "height": 260,
+        "width": 380,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1088,
+        480
+      ],
+      "id": "0bc0ae74-b1b7-409d-9370-fb1027921ce7",
+      "name": "Nota - sticky-schema-tutores"
+    },
+    {
+      "parameters": {
+        "content": "## ℹ️ Nueva hoja requerida: ESTUDIANTES\nColumnas mínimas: `id_estudiante`, `telegram_id`. Se agregó para poder resolver el telegram_id real del estudiante antes de notificarlo (ver nodos 'Buscar Telegram Estudiante').",
+        "height": 260,
+        "width": 380,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        912,
+        400
+      ],
+      "id": "45236eb8-ff56-484d-9508-b0a75049338f",
+      "name": "Nota - sticky-schema-estudiantes"
+    },
+    {
+      "parameters": {
+        "content": "## ⚠️ Configuración manual pendiente\nDespués de importar: ve a Configuración del workflow → Error Workflow → selecciona este mismo workflow. También reemplaza el chatId de admin en 'Notificar Error' (ADMIN_TELEGRAM_CHAT_ID) por tu chat_id real, o defínelo como variable de entorno en n8n.",
+        "height": 260,
+        "width": 380,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1472,
+        608
+      ],
+      "id": "bb92545b-096d-4c19-aed3-eaf797dc8849",
+      "name": "Nota - sticky-error-workflow"
+    },
+    {
+      "parameters": {
+        "content": "## ℹ️ Nota de consistencia\nTUTORES y DISPONIBILIDAD se referencian por nombre; SESSIONS y TUTORIAS por gid numérico. No rompe el flujo, pero si renombras esas hojas convendría re-seleccionarlas desde la UI para que n8n regenere la referencia por gid, más robusta.",
+        "height": 260,
+        "width": 380,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1104,
+        800
+      ],
+      "id": "50d11cd2-a8bd-4692-801b-6d7cddbfa1f9",
+      "name": "Nota - sticky-referencia-hojas"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extraer Datos Mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Datos Mensaje": {
+      "main": [
+        [
+          {
+            "node": "Buscar en Hoja Tutores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar en Hoja Tutores": {
+      "main": [
+        [
+          {
+            "node": "Buscar Sesion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Sesion": {
+      "main": [
+        [
+          {
+            "node": "Gestionar Sesion y Registro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gestionar Sesion y Registro": {
+      "main": [
+        [
+          {
+            "node": "¿Tutor Registrado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Tutor Registrado?": {
+      "main": [
+        [
+          {
+            "node": "Router Pantalla",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mensaje No Registrado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router Pantalla": {
+      "main": [
+        [
+          {
+            "node": "Mostrar Menu Tutor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Interpretar Opcion Menu",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validar Seleccion Accion",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validar Seleccion Accion",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mensaje Sesion Corrupta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mostrar Menu Tutor": {
+      "main": [
+        [
+          {
+            "node": "Guardar Sesion: esperando_opcion_menu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Interpretar Opcion Menu": {
+      "main": [
+        [
+          {
+            "node": "¿Opción Válida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Opción Válida?": {
+      "main": [
+        [
+          {
+            "node": "Leer Tutorias",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Opcion Invalida - Reintentar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Tutorias": {
+      "main": [
+        [
+          {
+            "node": "Procesar Opcion Menu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procesar Opcion Menu": {
+      "main": [
+        [
+          {
+            "node": "Enviar Mensaje Opcion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Mensaje Opcion": {
+      "main": [
+        [
+          {
+            "node": "Hay Items Opcion?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hay Items Opcion?": {
+      "main": [
+        [
+          {
+            "node": "Guardar Sesion Opcion",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mostrar Menu Tutor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Seleccion Accion": {
+      "main": [
+        [
+          {
+            "node": "Seleccion Valida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Seleccion Valida?": {
+      "main": [
+        [
+          {
+            "node": "Actualizar Estado Tutoria",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar Mensaje Invalido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar Estado Tutoria": {
+      "main": [
+        [
+          {
+            "node": "Actualizar Estado Disponibilidad",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar Estado Disponibilidad": {
+      "main": [
+        [
+          {
+            "node": "Buscar Telegram Estudiante",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Telegram Estudiante": {
+      "main": [
+        [
+          {
+            "node": "Notificar Estudiante",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notificar Estudiante": {
+      "main": [
+        [
+          {
+            "node": "Notificar Tutor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notificar Tutor": {
+      "main": [
+        [
+          {
+            "node": "Mostrar Menu Tutor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Errores Sheets": {
+      "main": [
+        [
+          {
+            "node": "Notificar Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensaje Sesion Corrupta": {
+      "main": [
+        [
+          {
+            "node": "Reset Sesion (corrupta)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "19cf15bb-cdff-4e44-926b-6055062b91a0",
+  "meta": {
+    "instanceId": "c580bd9762e5a23214bf60011b55eda3b2de66cb91f69b3de2807117cf9ccf55"
+  },
+  "id": "k92avB1MVLveQExP",
+  "tags": []
+}
